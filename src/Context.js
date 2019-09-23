@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import Items from './data';
+import Client from './contentful';
+
 
 const RoomContext = React.createContext();
 
@@ -21,14 +22,27 @@ class RoomProvider extends Component {
     }
 
     //get Data
+    getData = async () => {
+        try {
+            let response = await Client.getEntries({
+                content_type: "beachResortRoom",
+                order: "sys.createdAt"
+            })
+
+            let rooms = this.formatData(response.items);
+            let featuredRooms = rooms.filter(room => room.featured === true);
+            let maxPrice = Math.max(...rooms.map(item => item.price))
+            let maxSize = Math.max(...rooms.map(item => item.size))
+            this.setState({
+                rooms, featuredRooms, sortedRooms: rooms, loading: false, price: maxPrice, maxSize, maxPrice
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     componentDidMount() {
-        let rooms = this.formatData(Items);
-        let featuredRooms = rooms.filter(room => room.featured === true);
-        let maxPrice = Math.max(...rooms.map(item => item.price))
-        let maxSize = Math.max(...rooms.map(item => item.size))
-        this.setState({
-            rooms, featuredRooms, sortedRooms: rooms, loading: false, price: maxPrice, maxSize, maxPrice
-        })
+        this.getData()
     }
 
     formatData(Items) {
@@ -59,7 +73,7 @@ class RoomProvider extends Component {
 
     filterRooms = () => {
         let {
-            rooms, type, capacity, price, minSize, maxSize, breakfast,pets
+            rooms, type, capacity, price, minSize, maxSize, breakfast, pets
         } = this.state
 
         //all the rooms
@@ -69,28 +83,28 @@ class RoomProvider extends Component {
         price = parseInt(price)
 
         //filter by type
-        if(type !== 'all'){
+        if (type !== 'all') {
             tempRooms = tempRooms.filter(room => room.type === type)
         }
         //filter by capacity
-        if(capacity !== 1){
-            tempRooms = tempRooms.filter( room => room.capacity >= capacity)
+        if (capacity !== 1) {
+            tempRooms = tempRooms.filter(room => room.capacity >= capacity)
         }
         //filter by price
-        tempRooms = tempRooms.filter(room => room.price <=  price)
+        tempRooms = tempRooms.filter(room => room.price <= price)
         //filter by breakfast
-        if(breakfast){
+        if (breakfast) {
             tempRooms = tempRooms.filter(room => room.breakfast === true)
         }
         //filter by pets
-        if(pets){
+        if (pets) {
             tempRooms = tempRooms.filter(room => room.pets === true)
         }
         //filter by size
         tempRooms = tempRooms.filter(room => room.size >= minSize && room.size <= maxSize)
         //change state
         this.setState({
-            sortedRooms : tempRooms
+            sortedRooms: tempRooms
         })
     }
     render() {
